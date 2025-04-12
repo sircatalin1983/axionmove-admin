@@ -1,0 +1,19 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.page-content {
+  flex: 1;
+  padding: 0;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}
