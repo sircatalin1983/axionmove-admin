@@ -1,6 +1,7 @@
-/* You can add global styles to this file, and also import other style files */
-
+@use '@angular/material' as mat;
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+/* You can add global styles to this file, and also import other style files */
 
 html, body {
   height: 100%;
@@ -57,4 +58,31 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.success-snackbar {
+  background: #e6f4ea;
+  color: #1e8e3e;
+  
+  .mat-simple-snackbar-action {
+    color: #1e8e3e;
+  }
+}
+
+.error-snackbar {
+  background: #fce8e6;
+  color: #d93025;
+  
+  .mat-simple-snackbar-action {
+    color: #d93025;
+  }
+}
+
+.warning-snackbar {
+  background: #fef7e0;
+  color: #f9ab00;
+  
+  .mat-simple-snackbar-action {
+    color: #f9ab00;
+  }
 }

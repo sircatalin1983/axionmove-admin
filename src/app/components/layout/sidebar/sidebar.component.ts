@@ -43,6 +43,11 @@ export class SidebarComponent implements OnInit {
       roles: ['admin']
     },
     {
+      label: 'Vehicles',
+      icon: 'directions_car',
+      link: '/vehicles'
+    },
+    {
       label: 'Trips',
       icon: 'directions_car',
       link: '/trips'

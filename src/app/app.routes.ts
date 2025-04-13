@@ -19,6 +19,11 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
+      { 
+        path: 'vehicles', 
+        loadChildren: () => import('./components/vehicles/vehicles.module').then(m => m.VehiclesModule),
+        title: 'Vehicles Management'
+      }
     ]
   },
   { path: '**', redirectTo: '/login' }

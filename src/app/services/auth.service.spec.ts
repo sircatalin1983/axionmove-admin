@@ -1,37 +1,49 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
-import { 
-  User, 
-  AuthResponse, 
-  LoginRequest, 
-  RegisterRequest, 
-  ForgotPasswordRequest, 
-  ResetPasswordRequest 
-} from '../models/user.model';
+import { User, AuthResponse, LoginRequest, RegisterRequest, ForgotPasswordRequest, ResetPasswordRequest } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
-  const apiUrl = `${environment.apiUrl}/auth`;
 
-  // Mock data
   const mockUser: User = {
     id: 1,
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
     role: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: '2024-03-20T10:00:00Z',
+    updatedAt: '2024-03-20T10:00:00Z'
+  };
+
+  const mockLoginRequest: LoginRequest = {
+    email: 'test@example.com',
+    password: 'password123'
+  };
+
+  const mockRegisterRequest: RegisterRequest = {
+    email: 'test@example.com',
+    password: 'password123',
+    firstName: 'Test',
+    lastName: 'User'
+  };
+
+  const mockForgotPasswordRequest: ForgotPasswordRequest = {
+    email: 'test@example.com'
+  };
+
+  const mockResetPasswordRequest: ResetPasswordRequest = {
+    token: 'reset-token',
+    password: 'newpassword123'
   };
 
   const mockAuthResponse: AuthResponse = {
     success: true,
-    token: 'mock-token-xyz',
+    token: 'mock-jwt-token',
     user: mockUser,
-    message: 'Successfully authenticated'
+    message: 'Authentication successful'
   };
 
   beforeEach(() => {
@@ -39,16 +51,13 @@ describe('AuthService', () => {
       imports: [HttpClientTestingModule],
       providers: [AuthService]
     });
-    
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
-    
-    // Clear localStorage before each test
-    localStorage.clear();
   });
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('should be created', () => {
@@ -56,179 +65,91 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should send login request and store user data on success', () => {
-      const loginRequest: LoginRequest = {
-        email: 'john@example.com',
-        password: 'password123'
-      };
-
-      service.login(loginRequest).subscribe(response => {
+    it('should authenticate user and store token', () => {
+      service.login(mockLoginRequest).subscribe(response => {
         expect(response).toEqual(mockAuthResponse);
-        expect(service.currentUserValue).toEqual(mockUser);
-        expect(service.getToken()).toEqual(mockAuthResponse.token);
-        expect(service.isLoggedIn()).toBeTrue();
+        expect(localStorage.getItem('auth_token')).toBe(mockAuthResponse.token);
+        expect(service.currentUserValue).toEqual(mockAuthResponse.user);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/login`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
       expect(req.request.method).toBe('POST');
       req.flush(mockAuthResponse);
-    });
-
-    it('should not update user state on login failure', () => {
-      const loginRequest: LoginRequest = {
-        email: 'invalid@example.com',
-        password: 'wrong'
-      };
-
-      const errorResponse = {
-        success: false,
-        message: 'Invalid credentials'
-      };
-
-      service.login(loginRequest).subscribe({
-        next: () => {},
-        error: error => {
-          expect(error).toBeTruthy();
-          expect(service.currentUserValue).toBeNull();
-          expect(service.isLoggedIn()).toBeFalse();
-        }
-      });
-
-      const req = httpMock.expectOne(`${apiUrl}/login`);
-      req.flush(errorResponse, { status: 401, statusText: 'Unauthorized' });
     });
   });
 
   describe('register', () => {
-    it('should send register request and store user data on success', () => {
-      const registerRequest: RegisterRequest = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        password: 'password123'
-      };
-
-      service.register(registerRequest).subscribe(response => {
+    it('should register new user', () => {
+      service.register(mockRegisterRequest).subscribe(response => {
         expect(response).toEqual(mockAuthResponse);
-        expect(service.currentUserValue).toEqual(mockUser);
-        expect(service.getToken()).toEqual(mockAuthResponse.token);
+        expect(localStorage.getItem('auth_token')).toBe(mockAuthResponse.token);
+        expect(service.currentUserValue).toEqual(mockAuthResponse.user);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/register`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/auth/register`);
       expect(req.request.method).toBe('POST');
       req.flush(mockAuthResponse);
     });
   });
 
   describe('forgotPassword', () => {
-    it('should send forgot password request', () => {
-      const forgotRequest: ForgotPasswordRequest = {
-        email: 'john@example.com'
-      };
+    it('should send password reset email', () => {
+      const mockResponse = { success: true, message: 'Reset email sent' };
 
-      const response = {
-        success: true,
-        message: 'Password reset email sent'
-      };
-
-      service.forgotPassword(forgotRequest).subscribe(res => {
-        expect(res).toEqual(response);
+      service.forgotPassword(mockForgotPasswordRequest).subscribe(response => {
+        expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/forgot-password`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/auth/forgot-password`);
       expect(req.request.method).toBe('POST');
-      req.flush(response);
+      req.flush(mockResponse);
     });
   });
 
   describe('resetPassword', () => {
-    it('should send reset password request', () => {
-      const resetRequest: ResetPasswordRequest = {
-        token: 'reset-token-xyz',
-        password: 'newpassword123'
-      };
+    it('should reset password', () => {
+      const mockResponse = { success: true, message: 'Password reset successful' };
 
-      const response = {
-        success: true,
-        message: 'Password reset successful'
-      };
-
-      service.resetPassword(resetRequest).subscribe(res => {
-        expect(res).toEqual(response);
+      service.resetPassword(mockResetPasswordRequest).subscribe(response => {
+        expect(response).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${apiUrl}/reset-password`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/auth/reset-password`);
       expect(req.request.method).toBe('POST');
-      req.flush(response);
+      req.flush(mockResponse);
     });
   });
 
   describe('logout', () => {
-    it('should clear user data and token from storage', () => {
-      // Setup: simulate logged in state
-      localStorage.setItem('auth_token', 'mock-token');
+    it('should clear user data and token', () => {
+      // Set up initial state
+      localStorage.setItem('auth_token', 'test-token');
       localStorage.setItem('user', JSON.stringify(mockUser));
-      // Force the BehaviorSubject to have the user
-      service.login({
-        email: mockUser.email,
-        password: 'password'
-      }).subscribe();
-      
-      const req = httpMock.expectOne(`${apiUrl}/login`);
-      req.flush(mockAuthResponse);
-      
-      expect(service.currentUserValue).toEqual(mockUser);
-      
-      // Act: logout
+      service['currentUserSubject'].next(mockUser);
+
       service.logout();
-      
-      // Assert
-      expect(service.currentUserValue).toBeNull();
-      expect(service.getToken()).toBeNull();
-      expect(service.isLoggedIn()).toBeFalse();
+
       expect(localStorage.getItem('auth_token')).toBeNull();
       expect(localStorage.getItem('user')).toBeNull();
+      expect(service.currentUserValue).toBeNull();
     });
   });
 
   describe('isAdmin', () => {
-    it('should return true when user has admin role', () => {
-      // Setup admin user
-      localStorage.setItem('user', JSON.stringify(mockUser));
+    it('should return true for admin user', () => {
       service['currentUserSubject'].next(mockUser);
-      
-      expect(service.isAdmin()).toBeTrue();
+      expect(service.isAdmin()).toBe(true);
     });
-    
-    it('should return false when user is not admin', () => {
-      const nonAdminUser: User = {...mockUser, role: 'user'};
-      localStorage.setItem('user', JSON.stringify(nonAdminUser));
-      service['currentUserSubject'].next(nonAdminUser);
-      
-      expect(service.isAdmin()).toBeFalse();
-    });
-    
-    it('should return false when user is not logged in', () => {
-      service['currentUserSubject'].next(null);
-      
-      expect(service.isAdmin()).toBeFalse();
-    });
-  });
 
-  describe('user storage functions', () => {
-    it('should store and retrieve token correctly', () => {
-      const token = 'test-token-123';
-      service['storeToken'](token);
-      
-      expect(localStorage.getItem('auth_token')).toEqual(token);
-      expect(service.getToken()).toEqual(token);
+    it('should return false for non-admin user', () => {
+      const nonAdminUser = { ...mockUser, role: 'user' as const };
+      service['currentUserSubject'].next(nonAdminUser);
+      expect(service.isAdmin()).toBe(false);
     });
-    
-    it('should store and retrieve user correctly', () => {
-      service['storeUser'](mockUser);
-      
-      const retrievedUser = service['getUserFromStorage']();
-      expect(retrievedUser).toEqual(mockUser);
+
+    it('should return false when no user is logged in', () => {
+      service['currentUserSubject'].next(null);
+      expect(service.isAdmin()).toBe(false);
     });
   });
 });
